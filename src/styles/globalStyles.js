@@ -2,6 +2,24 @@ import { StyleSheet } from 'react-native';
 import { COLORS } from '../constants/colors';
 
 export const globalStyles = StyleSheet.create({
+    header: {
+        backgroundColor: '#E63946',
+        paddingTop: 12,
+        paddingHorizontal: 20,
+        paddingBottom: 20,
+    },
+
+    section: {
+        paddingHorizontal: 0,
+        marginTop: 20,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 14,
+        paddingHorizontal: 20,
+    },
     container: {
         flex: 1,
         backgroundColor: COLORS.background,
@@ -17,6 +35,8 @@ export const globalStyles = StyleSheet.create({
         shadowOpacity: 0.08,
         shadowRadius: 6,
         elevation: 3,
+        paddingHorizontal: 20,
+        marginBottom: 14,
     },
     primaryButton: {
         backgroundColor: COLORS.primary,
@@ -47,4 +67,15 @@ export const globalStyles = StyleSheet.create({
         marginBottom: 12,
         marginHorizontal: 16,
     },
+
+    searchBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        gap: 8,
+    },
+
 });

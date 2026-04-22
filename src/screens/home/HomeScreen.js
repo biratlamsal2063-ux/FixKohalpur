@@ -4,19 +4,18 @@ import {
     StyleSheet, ActivityIndicator, RefreshControl,
     ScrollView, Animated, StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../firebase/firebaseConfig';
 import { fetchProviders } from '../../services/providerService';
 import ProviderCard from '../../components/ProviderCard';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuthContext } from '../../contexts/AuthContext';
-
-const FILTERS = [
-    { key: 'all', label: 'All' },
-    { key: 'available', label: 'Available Now' },
-    { key: 'top', label: 'Top Rated' },
-    { key: 'electrician', label: 'Electricians' },
-    { key: 'plumber', label: 'Plumbers' },
-];
+import FilterSheet, {
+    DEFAULT_FILTERS,
+    applyFilters,
+    countActiveFilters,
+} from '../../components/FilterSheet';
 
 const CATEGORIES = [
     { key: 'electrician', icon: '⚡', label: 'Electric', bg: '#FFF0F1' },
@@ -41,19 +40,23 @@ const getGreeting = () => {
 export default function HomeScreen({ navigation }) {
     const insets = useSafeAreaInsets();
     const { user } = useContext(AuthContext);
+
+    const [profileName, setProfileName] = useState('');
     const [providers, setProviders] = useState([]);
     const [filtered, setFiltered] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [search, setSearch] = useState('');
-    const [activePill, setActivePill] = useState('all');
     const [activeCat, setActiveCat] = useState('electrician');
+    const [filters, setFilters] = useState(DEFAULT_FILTERS);  // ← filter state
+    const [filterOpen, setFilterOpen] = useState(false);             // ← sheet open/close
 
-    // Staggered entrance animations
-    const anims = useRef([...Array(10)].map(() => ({
-        opacity: new Animated.Value(0),
-        translateY: new Animated.Value(20),
-    }))).current;
+    const anims = useRef(
+        [...Array(10)].map(() => ({
+            opacity: new Animated.Value(0),
+            translateY: new Animated.Value(20),
+        }))
+    ).current;
 
     const runAnims = () => {
         anims.forEach((a, i) => {
@@ -66,6 +69,26 @@ export default function HomeScreen({ navigation }) {
         });
     };
 
+    // Fetch real name from Firestore
+    useEffect(() => {
+        const fetchName = async () => {
+            if (!user) return;
+            try {
+                const snap = await getDoc(doc(db, 'users', user.uid));
+                if (snap.exists() && snap.data().name) {
+                    setProfileName(snap.data().name.split(' ')[0]);
+                } else if (user.displayName) {
+                    setProfileName(user.displayName.split(' ')[0]);
+                } else {
+                    setProfileName(user.email?.split('@')[0] || 'User');
+                }
+            } catch (e) {
+                setProfileName(user.displayName?.split(' ')[0] || 'User');
+            }
+        };
+        fetchName();
+    }, [user]);
+
     const loadProviders = async () => {
         const data = await fetchProviders();
         setProviders(data);
@@ -76,33 +99,42 @@ export default function HomeScreen({ navigation }) {
 
     useEffect(() => { if (user) loadProviders(); }, [user]);
 
-    // Apply all filters whenever any dep changes
+    // Re-run filters whenever search, filters, category or providers change
     useEffect(() => {
-        let result = [...providers];
-
+        // Merge category filter into the filters object temporarily
+        const merged = { ...filters };
         if (activeCat !== 'all' && activeCat !== 'ac' && activeCat !== 'paint') {
-            result = result.filter(p => p.serviceType === activeCat);
+            merged.type = activeCat;
         }
-        if (activePill === 'available') result = result.filter(p => p.isAvailable);
-        if (activePill === 'top') result = result.filter(p => (p.rating || 0) >= 4.5);
-        if (activePill === 'electrician') result = result.filter(p => p.serviceType === 'electrician');
-        if (activePill === 'plumber') result = result.filter(p => p.serviceType === 'plumber');
-        if (search.trim()) {
-            result = result.filter(p =>
-                p.name.toLowerCase().includes(search.toLowerCase())
-            );
-        }
-
+        const result = applyFilters(providers, merged, search);
         setFiltered(result);
-    }, [search, activePill, activeCat, providers]);
+    }, [search, filters, activeCat, providers]);
 
-    // ── SUB COMPONENTS ─────────────────────────────────────
+    // Count how many filters are active to show badge on button
+    const activeFilterCount = countActiveFilters(filters);
+
+    // Active filter tags shown below search bar
+    const getActiveFilterTags = () => {
+        const tags = [];
+        if (filters.type !== 'all') tags.push({ label: filters.type === 'electrician' ? '⚡ Electrician' : '🔧 Plumber', key: 'type' });
+        if (filters.availability !== 'all') tags.push({ label: filters.availability === 'available' ? '🟢 Available' : '🔴 Busy', key: 'availability' });
+        if (filters.price !== 'all') tags.push({ label: `≤ Rs.${filters.price}`, key: 'price' });
+        if (filters.rating !== '0') tags.push({ label: `${filters.rating}★+`, key: 'rating' });
+        if (filters.sort !== 'rating') tags.push({ label: `Sort: ${filters.sort.replace('_', ' ')}`, key: 'sort' });
+        return tags;
+    };
+
+    const removeTag = (key) => {
+        setFilters(prev => ({ ...prev, [key]: DEFAULT_FILTERS[key] }));
+    };
+
+    // ── SUB COMPONENTS ─────────────────────────────────
 
     const BannerSection = () => (
         <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 16, gap: 10, paddingBottom: 2 }}
+            contentContainerStyle={{ paddingHorizontal: 20, gap: 10, paddingBottom: 2 }}
         >
             {BANNERS.map((b, i) => (
                 <View key={i} style={[styles.banner, { backgroundColor: b.color }]}>
@@ -124,7 +156,7 @@ export default function HomeScreen({ navigation }) {
         <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 16, gap: 10, paddingBottom: 2 }}
+            contentContainerStyle={{ paddingHorizontal: 20, gap: 10, paddingBottom: 2 }}
         >
             {CATEGORIES.map(cat => (
                 <TouchableOpacity
@@ -148,35 +180,10 @@ export default function HomeScreen({ navigation }) {
         </ScrollView>
     );
 
-    const PillSection = () => (
-        <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 16, gap: 8, paddingBottom: 2 }}
-        >
-            {FILTERS.map(f => (
-                <TouchableOpacity
-                    key={f.key}
-                    style={[styles.pill, activePill === f.key && styles.pillActive]}
-                    onPress={() => setActivePill(f.key)}
-                    activeOpacity={0.75}
-                >
-                    <Text style={[styles.pillText, activePill === f.key && styles.pillTextActive]}>
-                        {f.label}
-                    </Text>
-                </TouchableOpacity>
-            ))}
-        </ScrollView>
-    );
-
     const ListHeader = () => (
         <>
-            {/* Banners */}
-            <View style={styles.section}>
-                <BannerSection />
-            </View>
+            <View style={styles.section}><BannerSection /></View>
 
-            {/* Categories */}
             <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>Categories</Text>
@@ -185,18 +192,14 @@ export default function HomeScreen({ navigation }) {
                 <CategorySection />
             </View>
 
-            {/* Provider header + pills */}
             <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>Top Providers</Text>
                     <Text style={styles.countLabel}>{filtered.length} found</Text>
                 </View>
-                <PillSection />
             </View>
         </>
     );
-
-    // ── RENDER ──────────────────────────────────────────────
 
     if (loading) {
         return (
@@ -206,6 +209,8 @@ export default function HomeScreen({ navigation }) {
             </View>
         );
     }
+
+    const filterTags = getActiveFilterTags();
 
     return (
         <View style={[styles.screen, { paddingBottom: insets.bottom }]}>
@@ -217,24 +222,28 @@ export default function HomeScreen({ navigation }) {
                     <Ionicons name="location-sharp" size={12} color="rgba(255,255,255,0.85)" />
                     <Text style={styles.locText}>Kohalpur, Banke</Text>
                 </View>
+
                 <View style={styles.headerTop}>
                     <View>
                         <Text style={styles.greeting}>{getGreeting()}</Text>
-                        <Text style={styles.username}>
-                            {user?.displayName?.split(' ')[0] || 'User'} 👋
-                        </Text>
+                        <Text style={styles.username}>{profileName || 'User'} 👋</Text>
                     </View>
-                    <View style={styles.avatarWrap}>
-                        <View style={styles.avatar}>
-                            <Text style={styles.avatarText}>
-                                {(user?.displayName?.[0] || user?.email?.[0] || 'U').toUpperCase()}
-                            </Text>
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate('Profile')}
+                        activeOpacity={0.8}
+                    >
+                        <View style={styles.avatarWrap}>
+                            <View style={styles.avatar}>
+                                <Text style={styles.avatarText}>
+                                    {(profileName?.[0] || user?.email?.[0] || 'U').toUpperCase()}
+                                </Text>
+                            </View>
+                            <View style={styles.notifDot} />
                         </View>
-                        <View style={styles.notifDot} />
-                    </View>
+                    </TouchableOpacity>
                 </View>
 
-                {/* Search Bar */}
+                {/* Search bar */}
                 <View style={styles.searchBar}>
                     <Ionicons name="search-outline" size={16} color="#A8A8A8" />
                     <TextInput
@@ -250,13 +259,45 @@ export default function HomeScreen({ navigation }) {
                             <Ionicons name="close-circle" size={16} color="#A8A8A8" />
                         </TouchableOpacity>
                     )}
-                    <View style={styles.filterBtn}>
-                        <Ionicons name="options-outline" size={14} color="#fff" />
-                    </View>
+
+                    {/* ── FILTER BUTTON ── */}
+                    <TouchableOpacity
+                        style={styles.filterBtn}
+                        onPress={() => setFilterOpen(true)}
+                        activeOpacity={0.85}
+                    >
+                        <Ionicons name="options-outline" size={15} color="#fff" />
+                        {/* Orange badge shows count of active filters */}
+                        {activeFilterCount > 0 && (
+                            <View style={styles.filterBadge}>
+                                <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
+                            </View>
+                        )}
+                    </TouchableOpacity>
                 </View>
+
+                {/* Active filter tags */}
+                {filterTags.length > 0 && (
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{ gap: 6, paddingTop: 10 }}
+                    >
+                        {filterTags.map(tag => (
+                            <TouchableOpacity
+                                key={tag.key}
+                                style={styles.filterTag}
+                                onPress={() => removeTag(tag.key)}
+                            >
+                                <Text style={styles.filterTagText}>{tag.label}</Text>
+                                <Ionicons name="close" size={11} color="#E63946" />
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                )}
             </View>
 
-            {/* ── MAIN LIST ── */}
+            {/* ── LIST ── */}
             <FlatList
                 data={filtered}
                 keyExtractor={item => item.id}
@@ -264,10 +305,10 @@ export default function HomeScreen({ navigation }) {
                 ListHeaderComponent={<ListHeader />}
                 renderItem={({ item, index }) => (
                     <Animated.View style={{
-                        paddingHorizontal: 16,
-                        marginBottom: 10,
+                        paddingHorizontal: 20,
+                        marginBottom: 14,
                         opacity: index < 10 ? anims[index].opacity : 1,
-                        transform: [{ translateY: index < 10 ? anims[index].translateY : 0 }],
+                        transform: index < 10 ? [{ translateY: anims[index].translateY }] : [],
                     }}>
                         <ProviderCard
                             provider={item}
@@ -279,7 +320,15 @@ export default function HomeScreen({ navigation }) {
                     <View style={styles.emptyBox}>
                         <Text style={styles.emptyIcon}>🔍</Text>
                         <Text style={styles.emptyTitle}>No providers found</Text>
-                        <Text style={styles.emptySub}>Try a different category or search term</Text>
+                        <Text style={styles.emptySub}>Try adjusting your filters or search term</Text>
+                        {activeFilterCount > 0 && (
+                            <TouchableOpacity
+                                style={styles.clearFiltersBtn}
+                                onPress={() => setFilters(DEFAULT_FILTERS)}
+                            >
+                                <Text style={styles.clearFiltersBtnText}>Clear All Filters</Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
                 )}
                 refreshControl={
@@ -292,6 +341,15 @@ export default function HomeScreen({ navigation }) {
                 }
                 contentContainerStyle={{ paddingBottom: 32 }}
             />
+
+            {/* ── FILTER SHEET ── */}
+            <FilterSheet
+                visible={filterOpen}
+                onClose={() => setFilterOpen(false)}
+                filters={filters}
+                onApply={(newFilters) => setFilters(newFilters)}
+                resultCount={filtered.length}
+            />
         </View>
     );
 }
@@ -301,16 +359,17 @@ const styles = StyleSheet.create({
     loadingScreen: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F1FAEE' },
     loadingText: { color: '#6B6B6B', marginTop: 12, fontSize: 14 },
 
-    // Header
     header: {
         backgroundColor: '#E63946',
-        paddingTop: 48,
-        paddingHorizontal: 16,
+        paddingHorizontal: 20,
         paddingBottom: 16,
     },
     locRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
     locText: { fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: '500' },
-    headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 },
+    headerTop: {
+        flexDirection: 'row', justifyContent: 'space-between',
+        alignItems: 'flex-start', marginBottom: 14,
+    },
     greeting: { fontSize: 12, color: 'rgba(255,255,255,0.8)' },
     username: { fontSize: 20, fontWeight: '700', color: '#fff', letterSpacing: -0.3 },
     avatarWrap: { position: 'relative' },
@@ -326,29 +385,43 @@ const styles = StyleSheet.create({
         top: -1, right: -1, borderWidth: 2, borderColor: '#E63946',
     },
 
-    // Search
     searchBar: {
         flexDirection: 'row', alignItems: 'center',
         backgroundColor: '#fff', borderRadius: 12,
-        paddingHorizontal: 12, paddingVertical: 10, gap: 8,
+        paddingHorizontal: 14, paddingVertical: 12, gap: 8,
     },
     searchInput: { flex: 1, fontSize: 13, color: '#1D1D1D', padding: 0 },
-    filterBtn: {
-        width: 30, height: 30, backgroundColor: '#E63946',
-        borderRadius: 8, justifyContent: 'center', alignItems: 'center',
-    },
 
-    // Sections
-    section: { paddingHorizontal: 0, marginTop: 16 },
+    filterBtn: {
+        width: 32, height: 32, backgroundColor: '#E63946',
+        borderRadius: 9, justifyContent: 'center',
+        alignItems: 'center', position: 'relative',
+    },
+    filterBadge: {
+        position: 'absolute', top: -5, right: -5,
+        width: 16, height: 16, backgroundColor: '#F4A261',
+        borderRadius: 8, justifyContent: 'center', alignItems: 'center',
+        borderWidth: 1.5, borderColor: '#fff',
+    },
+    filterBadgeText: { fontSize: 9, color: '#fff', fontWeight: '700' },
+
+    filterTag: {
+        flexDirection: 'row', alignItems: 'center', gap: 4,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4,
+        borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)',
+    },
+    filterTagText: { fontSize: 11, color: '#fff', fontWeight: '600' },
+
+    section: { paddingHorizontal: 0, marginTop: 20 },
     sectionHeader: {
         flexDirection: 'row', justifyContent: 'space-between',
-        alignItems: 'center', marginBottom: 12, paddingHorizontal: 16,
+        alignItems: 'center', marginBottom: 14, paddingHorizontal: 20,
     },
     sectionTitle: { fontSize: 15, fontWeight: '700', color: '#1D1D1D' },
     seeAll: { fontSize: 12, color: '#E63946', fontWeight: '600' },
     countLabel: { fontSize: 12, color: '#6B6B6B' },
 
-    // Banners
     banner: {
         width: 210, height: 104, borderRadius: 14,
         padding: 12, justifyContent: 'space-between',
@@ -368,7 +441,6 @@ const styles = StyleSheet.create({
     },
     bannerBtnText: { color: '#fff', fontSize: 10, fontWeight: '600' },
 
-    // Categories
     catItem: { alignItems: 'center', gap: 6, minWidth: 58 },
     catCircle: {
         width: 54, height: 54, borderRadius: 14,
@@ -379,18 +451,13 @@ const styles = StyleSheet.create({
     catLabel: { fontSize: 10, color: '#6B6B6B', fontWeight: '500' },
     catLabelActive: { color: '#E63946', fontWeight: '700' },
 
-    // Filter Pills
-    pill: {
-        paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20,
-        backgroundColor: '#fff', borderWidth: 1, borderColor: '#E0E0E0',
-    },
-    pillActive: { backgroundColor: '#E63946', borderColor: '#E63946' },
-    pillText: { fontSize: 11, color: '#6B6B6B', fontWeight: '500' },
-    pillTextActive: { color: '#fff', fontWeight: '600' },
-
-    // Empty
     emptyBox: { alignItems: 'center', paddingTop: 50, paddingHorizontal: 32 },
     emptyIcon: { fontSize: 36, marginBottom: 12 },
     emptyTitle: { fontSize: 16, fontWeight: '700', color: '#1D1D1D', marginBottom: 6 },
     emptySub: { fontSize: 13, color: '#6B6B6B', textAlign: 'center' },
+    clearFiltersBtn: {
+        marginTop: 16, backgroundColor: '#E63946',
+        borderRadius: 12, paddingHorizontal: 20, paddingVertical: 10,
+    },
+    clearFiltersBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
 });

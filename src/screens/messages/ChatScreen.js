@@ -21,7 +21,6 @@ export default function ChatScreen({ route, navigation }) {
     const [sending, setSending] = useState(false);
     const listRef = useRef(null);
 
-    // Conversation ID is always sorted so both sides get the same doc
     const chatId = [user.uid, booking.providerId].sort().join('_') + '_' + booking.id;
 
     useEffect(() => {
@@ -49,7 +48,6 @@ export default function ChatScreen({ route, navigation }) {
                 createdAt: serverTimestamp(),
                 type: 'text',
             });
-            // Update last message on booking doc
             await updateDoc(doc(db, 'bookings', booking.id), {
                 lastMessage: trimmed,
                 lastMessageAt: serverTimestamp(),
@@ -88,10 +86,7 @@ export default function ChatScreen({ route, navigation }) {
                             {item.text}
                         </Text>
                         <Text style={[styles.bubbleTime, isMe && styles.bubbleTimeMe]}>
-                            {formatTime(item.createdAt)}
-                            {isMe && (
-                                <Text>  ✓✓</Text>
-                            )}
+                            {formatTime(item.createdAt)}{isMe ? '  ✓✓' : ''}
                         </Text>
                     </View>
                 </View>
@@ -108,7 +103,6 @@ export default function ChatScreen({ route, navigation }) {
             <View style={[styles.screen, { paddingBottom: insets.bottom }]}>
                 <StatusBar barStyle="light-content" backgroundColor="#E63946" />
 
-                {/* Header */}
                 <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
                         <Ionicons name="chevron-back" size={24} color="#fff" />
@@ -134,15 +128,13 @@ export default function ChatScreen({ route, navigation }) {
                     </TouchableOpacity>
                 </View>
 
-                {/* Booking status banner */}
                 <View style={styles.bookingBanner}>
                     <Ionicons name="calendar-outline" size={13} color="#185FA5" />
                     <Text style={styles.bookingBannerText}>
-                        Booking #{booking.id.slice(0, 8).toUpperCase()} · {booking.date} · {booking.timeSlot}
+                        #{booking.id.slice(0, 8).toUpperCase()} · {booking.date} · {booking.timeSlot}
                     </Text>
                 </View>
 
-                {/* Messages */}
                 <FlatList
                     ref={listRef}
                     data={messages}
@@ -163,7 +155,6 @@ export default function ChatScreen({ route, navigation }) {
                     }
                 />
 
-                {/* Input */}
                 <View style={styles.inputRow}>
                     <TextInput
                         style={styles.input}
@@ -232,32 +223,22 @@ const styles = StyleSheet.create({
     dateDivider: { alignItems: 'center', marginVertical: 12 },
     dateDividerText: {
         fontSize: 10, color: '#A8A8A8',
-        backgroundColor: '#E8E8E8', paddingHorizontal: 10,
-        paddingVertical: 3, borderRadius: 10,
+        backgroundColor: '#E8E8E8',
+        paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10,
     },
 
     msgWrap: { marginBottom: 6, alignItems: 'flex-start' },
     msgWrapMe: { alignItems: 'flex-end' },
-
-    bubble: {
-        maxWidth: '78%', padding: 10, paddingHorizontal: 13,
-        borderRadius: 16,
-    },
+    bubble: { maxWidth: '78%', padding: 10, paddingHorizontal: 13, borderRadius: 16 },
     bubbleThem: {
         backgroundColor: '#fff',
         borderBottomLeftRadius: 4,
         borderWidth: 1, borderColor: '#EEEEEE',
     },
-    bubbleMe: {
-        backgroundColor: '#E63946',
-        borderBottomRightRadius: 4,
-    },
+    bubbleMe: { backgroundColor: '#E63946', borderBottomRightRadius: 4 },
     bubbleText: { fontSize: 13, color: '#1D1D1D', lineHeight: 19 },
     bubbleTextMe: { color: '#fff' },
-    bubbleTime: {
-        fontSize: 10, color: '#A8A8A8',
-        marginTop: 4, textAlign: 'right',
-    },
+    bubbleTime: { fontSize: 10, color: '#A8A8A8', marginTop: 4, textAlign: 'right' },
     bubbleTimeMe: { color: 'rgba(255,255,255,0.7)' },
 
     emptyChat: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 60 },

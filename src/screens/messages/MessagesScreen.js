@@ -1,13 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import {
     View, Text, FlatList, TouchableOpacity,
-    StyleSheet, StatusBar,
+    StyleSheet, StatusBar, ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {
-    collection, query, where, onSnapshot,
-    orderBy,
-} from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 import { db } from '../../firebase/firebaseConfig';
 import { AuthContext } from '../../contexts/AuthContext';
@@ -20,19 +17,16 @@ export default function MessagesScreen({ navigation }) {
 
     useEffect(() => {
         if (!user) return;
-        // Listen to all bookings this user has — each booking = one conversation
         const q = query(
             collection(db, 'bookings'),
             where('userId', '==', user.uid),
             orderBy('createdAt', 'desc')
         );
-
         const unsub = onSnapshot(q, (snap) => {
             const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setConversations(data);
             setLoading(false);
         });
-
         return unsub;
     }, [user]);
 
@@ -61,7 +55,7 @@ export default function MessagesScreen({ navigation }) {
             <View style={styles.convBody}>
                 <Text style={styles.convName}>{item.providerName}</Text>
                 <Text style={styles.convMsg} numberOfLines={1}>
-                    Tap to open conversation
+                    {item.lastMessage || 'Tap to open conversation'}
                 </Text>
                 <View style={styles.bookingBadge}>
                     <Text style={styles.bookingBadgeText}>
@@ -75,12 +69,12 @@ export default function MessagesScreen({ navigation }) {
                 <View style={[
                     styles.statusPill,
                     item.status === 'confirmed' ? styles.pillGreen :
-                        item.status === 'completed' ? styles.pillBlue : styles.pillGray
+                        item.status === 'completed' ? styles.pillBlue : styles.pillGray,
                 ]}>
                     <Text style={[
                         styles.statusPillText,
                         item.status === 'confirmed' ? styles.pillGreenText :
-                            item.status === 'completed' ? styles.pillBlueText : styles.pillGrayText
+                            item.status === 'completed' ? styles.pillBlueText : styles.pillGrayText,
                     ]}>
                         {item.status}
                     </Text>
@@ -88,6 +82,14 @@ export default function MessagesScreen({ navigation }) {
             </View>
         </TouchableOpacity>
     );
+
+    if (loading) {
+        return (
+            <View style={styles.loadingScreen}>
+                <ActivityIndicator size="large" color="#E63946" />
+            </View>
+        );
+    }
 
     return (
         <View style={[styles.screen, { paddingBottom: insets.bottom }]}>
@@ -126,6 +128,8 @@ export default function MessagesScreen({ navigation }) {
 
 const styles = StyleSheet.create({
     screen: { flex: 1, backgroundColor: '#F1FAEE' },
+    loadingScreen: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F1FAEE' },
+
     header: {
         backgroundColor: '#E63946',
         paddingHorizontal: 20,
@@ -161,9 +165,9 @@ const styles = StyleSheet.create({
         alignSelf: 'flex-start', marginTop: 4,
     },
     bookingBadgeText: { fontSize: 9, color: '#E63946', fontWeight: '700' },
+
     convRight: { alignItems: 'flex-end', gap: 6 },
     convTime: { fontSize: 10, color: '#A8A8A8' },
-
     statusPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
     pillGreen: { backgroundColor: '#E1F5EE' },
     pillBlue: { backgroundColor: '#EBF4F9' },

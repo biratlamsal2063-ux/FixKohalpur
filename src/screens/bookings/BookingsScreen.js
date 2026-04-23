@@ -19,6 +19,20 @@ const TABS = [
     { key: 'cancelled', label: 'Cancelled' },
 ];
 
+const RED_STATUS = { bg: '#FCEBEB', text: '#A32D2D' };
+const GREEN_STATUS = { bg: '#E1F5EE', text: '#0F6E56' };
+const BLUE_STATUS = { bg: '#EBF4F9', text: '#185FA5' };
+const AMBER_STATUS = { bg: '#FDF4E7', text: '#BA7517' };
+
+const STATUS_COLORS = {
+    pending: AMBER_STATUS,
+    assigned: GREEN_STATUS,
+    confirmed: GREEN_STATUS,
+    started: BLUE_STATUS,
+    completed: BLUE_STATUS,
+    cancelled: RED_STATUS,
+};
+
 export default function BookingsScreen({ navigation }) {
     const insets = useSafeAreaInsets();
     const { user } = useContext(AuthContext);
@@ -48,7 +62,6 @@ export default function BookingsScreen({ navigation }) {
         return true;
     });
 
-    // Stats
     const stats = {
         total: bookings.length,
         active: bookings.filter(b => ['pending', 'confirmed', 'assigned', 'started'].includes(b.status)).length,
@@ -64,7 +77,7 @@ export default function BookingsScreen({ navigation }) {
                     try {
                         await updateDoc(doc(db, 'bookings', bookingId), { status: 'cancelled' });
                     } catch (e) {
-                        Alert.alert('Error', 'Could not cancel booking.');
+                        Alert.alert('Error', 'Could not cancel. Please try again.');
                     }
                 },
             },
@@ -79,108 +92,109 @@ export default function BookingsScreen({ navigation }) {
 
         return (
             <View style={styles.actions}>
-                {/* PENDING */}
                 {isPending && (
                     <>
                         <TouchableOpacity
-                            style={[styles.actionBtn, styles.actionBtnGray]}
+                            style={styles.actionBtn}
                             onPress={() => handleCancel(item.id)}
                         >
-                            <Text style={styles.actionBtnGrayText}>Cancel</Text>
+                            <Text style={styles.actionGray}>Cancel</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={[styles.actionBtn, styles.actionBtnBlue]}
-                            onPress={() => navigation.navigate('TrackService', { booking: item })}
-                        >
-                            <Text style={styles.actionBtnBlueText}>Track</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.actionBtn, styles.actionBtnRed]}
-                            onPress={() => navigation.navigate('Messages', {
-                                screen: 'Chat', params: { booking: item },
-                            })}
-                        >
-                            <Text style={styles.actionBtnRedText}>Message</Text>
-                        </TouchableOpacity>
-                    </>
-                )}
-
-                {/* ACTIVE / ON THE WAY */}
-                {isActive && (
-                    <>
-                        <TouchableOpacity
-                            style={[styles.actionBtn, styles.actionBtnBlue]}
+                            style={[styles.actionBtn, styles.actionBorderLeft]}
                             onPress={() => navigation.navigate('TrackService', { booking: item })}
                         >
                             <Ionicons name="navigate-outline" size={13} color="#185FA5" />
-                            <Text style={styles.actionBtnBlueText}>Track</Text>
+                            <Text style={styles.actionBlue}>Track</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={[styles.actionBtn, styles.actionBtnRed]}
-                            onPress={() => navigation.navigate('Messages', {
-                                screen: 'Chat', params: { booking: item },
-                            })}
+                            style={[styles.actionBtn, styles.actionBorderLeft]}
+                            onPress={() => navigation.navigate('Chat', { booking: item })}
                         >
                             <Ionicons name="chatbubble-outline" size={13} color="#E63946" />
-                            <Text style={styles.actionBtnRedText}>Message</Text>
+                            <Text style={styles.actionRed}>Message</Text>
                         </TouchableOpacity>
                     </>
                 )}
 
-                {/* COMPLETED — UNPAID */}
+                {isActive && (
+                    <>
+                        <TouchableOpacity
+                            style={styles.actionBtn}
+                            onPress={() => navigation.navigate('TrackService', { booking: item })}
+                        >
+                            <Ionicons name="navigate-outline" size={13} color="#185FA5" />
+                            <Text style={styles.actionBlue}>Track</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.actionBtn, styles.actionBorderLeft]}
+                            onPress={() => navigation.navigate('Chat', { booking: item })}
+                        >
+                            <Ionicons name="chatbubble-outline" size={13} color="#E63946" />
+                            <Text style={styles.actionRed}>Message</Text>
+                        </TouchableOpacity>
+                    </>
+                )}
+
                 {isDone && item.paymentStatus === 'unpaid' && (
                     <>
                         <TouchableOpacity
-                            style={[styles.actionBtn, styles.actionBtnRed]}
+                            style={styles.actionBtn}
                             onPress={() => navigation.navigate('Payment', {
                                 bookingId: item.id,
-                                provider: { id: item.providerId, name: item.providerName, serviceType: item.serviceType },
+                                provider: {
+                                    id: item.providerId,
+                                    name: item.providerName,
+                                    serviceType: item.serviceType,
+                                },
                                 amount: item.ratePerHour,
                             })}
                         >
                             <Ionicons name="card-outline" size={13} color="#E63946" />
-                            <Text style={styles.actionBtnRedText}>Pay Now</Text>
+                            <Text style={styles.actionRed}>Pay Now</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={[styles.actionBtn, styles.actionBtnBlue]}
+                            style={[styles.actionBtn, styles.actionBorderLeft]}
                             onPress={() => navigation.navigate('Review', {
-                                bookingId: item.id, provider: { id: item.providerId, name: item.providerName },
+                                bookingId: item.id,
+                                provider: { id: item.providerId, name: item.providerName },
                             })}
                         >
                             <Ionicons name="star-outline" size={13} color="#185FA5" />
-                            <Text style={styles.actionBtnBlueText}>Review</Text>
+                            <Text style={styles.actionBlue}>Review</Text>
                         </TouchableOpacity>
                     </>
                 )}
 
-                {/* COMPLETED — PAID */}
                 {isDone && item.paymentStatus === 'paid' && (
                     <>
                         <TouchableOpacity
-                            style={[styles.actionBtn, styles.actionBtnBlue]}
+                            style={styles.actionBtn}
                             onPress={() => navigation.navigate('HomeTab')}
                         >
                             <Ionicons name="refresh-outline" size={13} color="#185FA5" />
-                            <Text style={styles.actionBtnBlueText}>Book Again</Text>
+                            <Text style={styles.actionBlue}>Book Again</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={[styles.actionBtn, styles.actionBtnGray]}
-                            onPress={() => Alert.alert('Receipt', `Booking #${item.id.slice(0, 8).toUpperCase()}\nAmount: Rs.${item.ratePerHour}\nStatus: Paid`)}
+                            style={[styles.actionBtn, styles.actionBorderLeft]}
+                            onPress={() => Alert.alert(
+                                'Receipt',
+                                `Booking #${item.id.slice(0, 8).toUpperCase()}\nAmount: Rs.${item.ratePerHour}\nStatus: Paid`
+                            )}
                         >
                             <Ionicons name="receipt-outline" size={13} color="#A8A8A8" />
-                            <Text style={styles.actionBtnGrayText}>Receipt</Text>
+                            <Text style={styles.actionGray}>Receipt</Text>
                         </TouchableOpacity>
                     </>
                 )}
 
-                {/* CANCELLED */}
                 {isCancelled && (
                     <TouchableOpacity
-                        style={[styles.actionBtn, styles.actionBtnRed]}
+                        style={styles.actionBtn}
                         onPress={() => navigation.navigate('HomeTab')}
                     >
                         <Ionicons name="add-circle-outline" size={13} color="#E63946" />
-                        <Text style={styles.actionBtnRedText}>Book Again</Text>
+                        <Text style={styles.actionRed}>Book Again</Text>
                     </TouchableOpacity>
                 )}
             </View>
@@ -189,19 +203,10 @@ export default function BookingsScreen({ navigation }) {
 
     const renderCard = ({ item }) => {
         const isElec = item.serviceType === 'electrician';
-        const statusColors = {
-            pending: { bg: '#FDF4E7', text: '#BA7517' },
-            assigned: { bg: '#E1F5EE', text: '#0F6E56' },
-            confirmed: { bg: '#E1F5EE', text: '#0F6E56' },
-            started: { bg: '#EBF4F9', text: '#185FA5' },
-            completed: { bg: '#EBF4F9', text: '#185FA5' },
-            cancelled: { bg: '#FCEBEB', text: '#A32D2D' },
-        };
-        const sc = statusColors[item.status] || statusColors.pending;
+        const sc = STATUS_COLORS[item.status] || AMBER_STATUS;
 
         return (
             <View style={styles.card}>
-                {/* Top row */}
                 <View style={styles.cardTop}>
                     <View style={[styles.avatar, isElec ? styles.avEl : styles.avPl]}>
                         <Text style={{ fontSize: 22 }}>{isElec ? '⚡' : '🔧'}</Text>
@@ -219,10 +224,8 @@ export default function BookingsScreen({ navigation }) {
                     </View>
                 </View>
 
-                {/* Divider */}
                 <View style={styles.divider} />
 
-                {/* Meta row */}
                 <View style={styles.metaRow}>
                     {[
                         { label: 'Date', value: item.date || '—' },
@@ -230,20 +233,20 @@ export default function BookingsScreen({ navigation }) {
                         { label: 'Rate', value: `Rs.${item.ratePerHour}/hr` },
                         {
                             label: 'Payment',
-                            value: item.paymentStatus || 'unpaid',
-                            accent: item.paymentStatus === 'paid' ? '#0F6E56' : '#E63946',
+                            value: (item.paymentStatus || 'unpaid').charAt(0).toUpperCase() +
+                                (item.paymentStatus || 'unpaid').slice(1),
+                            color: item.paymentStatus === 'paid' ? '#0F6E56' : '#E63946',
                         },
                     ].map((m, i) => (
                         <View key={i} style={[styles.meta, i > 0 && styles.metaBorder]}>
                             <Text style={styles.metaLabel}>{m.label}</Text>
-                            <Text style={[styles.metaValue, m.accent && { color: m.accent }]}>
+                            <Text style={[styles.metaValue, m.color && { color: m.color }]}>
                                 {m.value}
                             </Text>
                         </View>
                     ))}
                 </View>
 
-                {/* Actions */}
                 <View style={styles.divider} />
                 {renderActions(item)}
             </View>
@@ -254,6 +257,7 @@ export default function BookingsScreen({ navigation }) {
         return (
             <View style={styles.loadingScreen}>
                 <ActivityIndicator size="large" color="#E63946" />
+                <Text style={styles.loadingText}>Loading your bookings...</Text>
             </View>
         );
     }
@@ -262,7 +266,6 @@ export default function BookingsScreen({ navigation }) {
         <View style={[styles.screen, { paddingBottom: insets.bottom }]}>
             <StatusBar barStyle="light-content" backgroundColor="#E63946" />
 
-            {/* Header */}
             <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
                 <View style={styles.headerRow}>
                     <Text style={styles.headerTitle}>My Bookings</Text>
@@ -271,7 +274,6 @@ export default function BookingsScreen({ navigation }) {
                     </View>
                 </View>
 
-                {/* Tabs */}
                 <View style={styles.tabRow}>
                     {TABS.map(tab => (
                         <TouchableOpacity
@@ -297,7 +299,6 @@ export default function BookingsScreen({ navigation }) {
                 keyExtractor={item => item.id}
                 showsVerticalScrollIndicator={false}
                 ListHeaderComponent={() => (
-                    /* Stats row */
                     <View style={styles.statsRow}>
                         {[
                             { val: stats.total, label: 'Total', color: '#1D1D1D' },
@@ -340,6 +341,7 @@ export default function BookingsScreen({ navigation }) {
 const styles = StyleSheet.create({
     screen: { flex: 1, backgroundColor: '#F1FAEE' },
     loadingScreen: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F1FAEE' },
+    loadingText: { color: '#6B6B6B', marginTop: 12, fontSize: 14 },
 
     header: {
         backgroundColor: '#E63946',
@@ -359,16 +361,16 @@ const styles = StyleSheet.create({
     tabLabel: { fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.6)' },
     tabLabelActive: { color: '#fff' },
     tabUnderline: {
-        position: 'absolute', bottom: 0, left: '10%',
-        width: '80%', height: 2,
-        backgroundColor: '#fff', borderRadius: 1,
+        position: 'absolute', bottom: 0,
+        left: '10%', width: '80%',
+        height: 2, backgroundColor: '#fff', borderRadius: 1,
     },
 
     statsRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
     statCard: {
-        flex: 1, backgroundColor: '#fff',
-        borderRadius: 12, borderWidth: 1,
-        borderColor: '#EEEEEE', padding: 12, alignItems: 'center',
+        flex: 1, backgroundColor: '#fff', borderRadius: 12,
+        borderWidth: 1, borderColor: '#EEEEEE',
+        padding: 12, alignItems: 'center',
     },
     statVal: { fontSize: 22, fontWeight: '700' },
     statLabel: { fontSize: 10, color: '#A8A8A8', marginTop: 2, fontWeight: '500' },
@@ -405,20 +407,17 @@ const styles = StyleSheet.create({
     actions: { flexDirection: 'row' },
     actionBtn: {
         flex: 1, flexDirection: 'row', alignItems: 'center',
-        justifyContent: 'center', gap: 4,
-        paddingVertical: 11, borderWidth: 0,
+        justifyContent: 'center', gap: 4, paddingVertical: 11,
     },
-    actionBtnRed: { borderRightWidth: 0.5, borderRightColor: '#F5F5F5' },
-    actionBtnBlue: { borderRightWidth: 0.5, borderRightColor: '#F5F5F5' },
-    actionBtnGray: { borderRightWidth: 0.5, borderRightColor: '#F5F5F5' },
-    actionBtnRedText: { fontSize: 11, fontWeight: '700', color: '#E63946' },
-    actionBtnBlueText: { fontSize: 11, fontWeight: '700', color: '#185FA5' },
-    actionBtnGrayText: { fontSize: 11, fontWeight: '700', color: '#A8A8A8' },
+    actionBorderLeft: { borderLeftWidth: 1, borderLeftColor: '#F5F5F5' },
+    actionRed: { fontSize: 11, fontWeight: '700', color: '#E63946' },
+    actionBlue: { fontSize: 11, fontWeight: '700', color: '#185FA5' },
+    actionGray: { fontSize: 11, fontWeight: '700', color: '#A8A8A8' },
 
     emptyBox: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 40 },
     emptyIcon: { fontSize: 44, marginBottom: 14 },
     emptyTitle: { fontSize: 16, fontWeight: '700', color: '#1D1D1D', marginBottom: 8 },
-    emptySub: { fontSize: 13, color: '#A8A8A8', textAlign: 'center', lineHeight: 20 },
+    emptySub: { fontSize: 13, color: '#A8A8A8', textAlign: 'center', lineHeight: 20, paddingHorizontal: 20 },
     emptyBtn: {
         marginTop: 20, backgroundColor: '#E63946',
         borderRadius: 12, paddingHorizontal: 24, paddingVertical: 12,

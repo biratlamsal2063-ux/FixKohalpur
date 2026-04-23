@@ -58,7 +58,7 @@ export default function EditProfileScreen({ route, navigation }) {
                     <Text style={styles.avatarHint}>Profile photo coming soon</Text>
                 </View>
 
-                {/* Form fields */}
+                {/* Form */}
                 <View style={styles.formCard}>
                     <Field
                         label="Full Name"
@@ -75,6 +75,7 @@ export default function EditProfileScreen({ route, navigation }) {
                         onChangeText={setPhone}
                         placeholder="98XXXXXXXX"
                         keyboardType="phone-pad"
+                        isLast={false}
                     />
                     <Field
                         label="Address"
@@ -104,7 +105,7 @@ export default function EditProfileScreen({ route, navigation }) {
                     </Text>
                 </View>
 
-                {/* Buttons */}
+                {/* Save button */}
                 <TouchableOpacity
                     style={[styles.saveBtn, loading && { opacity: 0.7 }]}
                     onPress={handleSave}
@@ -120,11 +121,13 @@ export default function EditProfileScreen({ route, navigation }) {
                 <TouchableOpacity style={styles.cancelBtn} onPress={() => navigation.goBack()}>
                     <Text style={styles.cancelBtnText}>Cancel</Text>
                 </TouchableOpacity>
+
             </ScrollView>
         </View>
     );
 }
 
+// Reusable field component
 function Field({ label, icon, value, onChangeText, placeholder, keyboardType, autoCapitalize, isLast }) {
     return (
         <View style={[styles.fieldWrap, !isLast && styles.fieldBorder]}>
@@ -146,60 +149,96 @@ function Field({ label, icon, value, onChangeText, placeholder, keyboardType, au
 }
 
 const styles = StyleSheet.create({
-    container: { padding: 20 },
+    container: {
+        padding: 20,
+    },
 
-    avatarSection: { alignItems: 'center', marginBottom: 24, marginTop: 8 },
+    // Avatar
+    avatarSection: {
+        alignItems: 'center',
+        marginBottom: 24,
+        marginTop: 8,
+    },
     avatar: {
         width: 80, height: 80, borderRadius: 40,
         backgroundColor: '#E63946',
         justifyContent: 'center', alignItems: 'center',
-        marginBottom: 8, borderWidth: 3, borderColor: '#fff',
-        shadowColor: '#E63946', shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3, shadowRadius: 8, elevation: 6,
+        marginBottom: 8,
+        borderWidth: 3, borderColor: '#fff',
+        shadowColor: '#E63946',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 6,
     },
     avatarText: { fontSize: 30, fontWeight: '700', color: '#fff' },
     avatarHint: { fontSize: 12, color: '#A8A8A8' },
 
+    // Form card
     formCard: {
-        backgroundColor: '#fff', borderRadius: 14,
-        borderWidth: 1, borderColor: '#EEEEEE',
-        overflow: 'hidden', marginBottom: 14,
+        backgroundColor: '#fff',
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: '#EEEEEE',
+        overflow: 'hidden',
+        marginBottom: 14,
     },
     fieldWrap: { padding: 14 },
     fieldBorder: { borderBottomWidth: 1, borderBottomColor: '#F5F5F5' },
     fieldLabel: {
-        fontSize: 11, fontWeight: '700', color: '#A8A8A8',
-        textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6,
+        fontSize: 11, fontWeight: '700',
+        color: '#A8A8A8', textTransform: 'uppercase',
+        letterSpacing: 0.5, marginBottom: 6,
     },
     fieldRow: { flexDirection: 'row', alignItems: 'center' },
-    fieldInput: { flex: 1, fontSize: 14, color: '#1D1D1D', padding: 0 },
+    fieldInput: {
+        flex: 1, fontSize: 14,
+        color: '#1D1D1D', padding: 0,
+    },
 
+    // Read-only card
     readOnlyCard: {
-        backgroundColor: '#fff', borderRadius: 14,
-        borderWidth: 1, borderColor: '#EEEEEE',
-        overflow: 'hidden', marginBottom: 24, padding: 14,
+        backgroundColor: '#fff',
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: '#EEEEEE',
+        overflow: 'hidden',
+        marginBottom: 24,
+        padding: 14,
     },
     readOnlyTitle: {
-        fontSize: 11, fontWeight: '700', color: '#A8A8A8',
-        textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12,
+        fontSize: 11, fontWeight: '700',
+        color: '#A8A8A8', textTransform: 'uppercase',
+        letterSpacing: 0.5, marginBottom: 12,
     },
     readOnlyRow: {
-        flexDirection: 'row', alignItems: 'center', gap: 8,
-        paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F5F5F5',
+        flexDirection: 'row', alignItems: 'center',
+        gap: 8, paddingVertical: 10,
+        borderBottomWidth: 1, borderBottomColor: '#F5F5F5',
     },
     readOnlyLabel: { fontSize: 13, color: '#6B6B6B', fontWeight: '500', width: 50 },
     readOnlyValue: { flex: 1, fontSize: 13, color: '#1D1D1D', fontWeight: '600' },
-    readOnlyNote: { fontSize: 11, color: '#A8A8A8', marginTop: 10, lineHeight: 16 },
+    readOnlyNote: {
+        fontSize: 11, color: '#A8A8A8',
+        marginTop: 10, lineHeight: 16,
+    },
 
+    // Buttons
     saveBtn: {
         flexDirection: 'row', alignItems: 'center',
         justifyContent: 'center', gap: 8,
-        backgroundColor: '#E63946', borderRadius: 14,
-        paddingVertical: 15, marginBottom: 10,
-        shadowColor: '#E63946', shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.25, shadowRadius: 8, elevation: 4,
+        backgroundColor: '#E63946',
+        borderRadius: 14, paddingVertical: 15,
+        marginBottom: 10,
+        shadowColor: '#E63946',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+        elevation: 4,
     },
     saveBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
-    cancelBtn: { alignItems: 'center', paddingVertical: 12 },
+    cancelBtn: {
+        alignItems: 'center', paddingVertical: 12,
+    },
     cancelBtnText: { fontSize: 14, color: '#A8A8A8', fontWeight: '500' },
 });

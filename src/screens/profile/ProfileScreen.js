@@ -152,7 +152,7 @@ export default function ProfileScreen({ navigation }) {
                         title="My Bookings"
                         subtitle="View all past & upcoming"
                         badge={{ label: `${stats.bookings - stats.completed} Active`, color: 'green' }}
-                        onPress={() => navigation.navigate('MyBookings')}
+                        onPress={() => navigation.navigate('Bookings')}
                     />
                     <RowItem
                         icon="star-outline"
@@ -160,7 +160,7 @@ export default function ProfileScreen({ navigation }) {
                         iconColor="#BA7517"
                         title="My Reviews"
                         subtitle="Reviews you've written"
-                        onPress={() => navigation.navigate('MyReviews')}
+                        onPress={() => Alert.alert('Coming Soon', 'My Reviews will be available soon.')}
                     />
                     <RowItem
                         icon="card-outline"
@@ -168,7 +168,7 @@ export default function ProfileScreen({ navigation }) {
                         iconColor="#0F6E56"
                         title="Payment History"
                         subtitle="eSewa transactions"
-                        onPress={() => navigation.navigate('PaymentHistory')}
+                        onPress={() => Alert.alert('Coming Soon', 'Payment history will be available soon.')}
                         isLast
                     />
                 </SectionCard>

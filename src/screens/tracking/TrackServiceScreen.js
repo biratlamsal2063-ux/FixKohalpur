@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View, Text, TouchableOpacity, ScrollView,
     StyleSheet, StatusBar, Linking, Alert,
@@ -23,7 +23,6 @@ export default function TrackServiceScreen({ route, navigation }) {
     const { booking: initialBooking } = route.params;
     const [booking, setBooking] = useState(initialBooking);
 
-    // Live listener — status updates in real time
     useEffect(() => {
         const unsub = onSnapshot(doc(db, 'bookings', initialBooking.id), (snap) => {
             if (snap.exists()) setBooking({ id: snap.id, ...snap.data() });
@@ -41,7 +40,7 @@ export default function TrackServiceScreen({ route, navigation }) {
 
     const handleCall = () => {
         if (!booking.providerPhone) {
-            Alert.alert('Not available', 'Provider phone not on record.');
+            Alert.alert('Not available', 'Provider phone number is not available.');
             return;
         }
         Linking.openURL(`tel:${booking.providerPhone}`);
@@ -56,8 +55,12 @@ export default function TrackServiceScreen({ route, navigation }) {
                 {
                     text: 'Yes, Cancel', style: 'destructive',
                     onPress: async () => {
-                        await updateDoc(doc(db, 'bookings', booking.id), { status: 'cancelled' });
-                        navigation.goBack();
+                        try {
+                            await updateDoc(doc(db, 'bookings', booking.id), { status: 'cancelled' });
+                            navigation.goBack();
+                        } catch (e) {
+                            Alert.alert('Error', 'Could not cancel booking. Please try again.');
+                        }
                     },
                 },
             ]
@@ -70,23 +73,19 @@ export default function TrackServiceScreen({ route, navigation }) {
 
             <ScrollView showsVerticalScrollIndicator={false}>
 
-                {/* Map placeholder — replace with expo-location + MapView */}
+                {/* Map placeholder */}
                 <View style={styles.mapBox}>
                     <View style={styles.mapBg} />
-                    {/* Road lines */}
                     <View style={[styles.road, styles.roadH, { top: '40%' }]} />
                     <View style={[styles.road, styles.roadH, { top: '65%' }]} />
                     <View style={[styles.road, styles.roadV, { left: '30%' }]} />
                     <View style={[styles.road, styles.roadV, { left: '65%' }]} />
-                    {/* Your location pin */}
                     <Text style={[styles.mapPin, { bottom: 20, right: 30 }]}>📍</Text>
-                    {/* Tech dot */}
                     <View style={[styles.techDot, { left: '22%', top: '32%' }]}>
                         <Text style={{ fontSize: 13 }}>
                             {booking.serviceType === 'electrician' ? '⚡' : '🔧'}
                         </Text>
                     </View>
-                    {/* ETA badge */}
                     <View style={styles.etaBadge}>
                         <Ionicons name="time-outline" size={12} color="#E63946" />
                         <Text style={styles.etaText}>ETA ~12 min</Text>
@@ -97,8 +96,9 @@ export default function TrackServiceScreen({ route, navigation }) {
 
                     {/* Technician card */}
                     <View style={styles.techCard}>
-                        <View style={[styles.techAvatar,
-                        booking.serviceType === 'electrician' ? styles.avEl : styles.avPl
+                        <View style={[
+                            styles.techAvatar,
+                            booking.serviceType === 'electrician' ? styles.avEl : styles.avPl,
                         ]}>
                             <Text style={{ fontSize: 24 }}>
                                 {booking.serviceType === 'electrician' ? '⚡' : '🔧'}
@@ -109,7 +109,7 @@ export default function TrackServiceScreen({ route, navigation }) {
                             <Text style={styles.techType}>
                                 {booking.serviceType} · #{booking.id.slice(0, 8).toUpperCase()}
                             </Text>
-                            <Text style={styles.techRating}>★ 4.9 · 128 reviews</Text>
+                            <Text style={styles.techRating}>★ 4.9 · Verified Pro</Text>
                         </View>
                         <View style={styles.techActions}>
                             <TouchableOpacity
@@ -148,7 +148,7 @@ export default function TrackServiceScreen({ route, navigation }) {
                                         {!isLast && (
                                             <View style={[
                                                 styles.stepLine,
-                                                state === 'done' ? styles.stepLineDone : styles.stepLinePending
+                                                state === 'done' ? styles.stepLineDone : styles.stepLinePending,
                                             ]} />
                                         )}
                                     </View>
@@ -188,20 +188,17 @@ export default function TrackServiceScreen({ route, navigation }) {
                         ].map((row, i, arr) => (
                             <View key={i} style={[
                                 styles.detailRow,
-                                i < arr.length - 1 && styles.detailRowBorder
+                                i < arr.length - 1 && styles.detailRowBorder,
                             ]}>
                                 <Text style={styles.detailLabel}>{row.label}</Text>
-                                <Text style={[
-                                    styles.detailValue,
-                                    row.accent && { color: '#E63946' }
-                                ]}>
+                                <Text style={[styles.detailValue, row.accent && { color: '#E63946' }]}>
                                     {row.value}
                                 </Text>
                             </View>
                         ))}
                     </View>
 
-                    {/* Pay button — show when completed but unpaid */}
+                    {/* Pay button */}
                     {booking.status === 'completed' && booking.paymentStatus === 'unpaid' && (
                         <TouchableOpacity
                             style={styles.payBtn}
@@ -220,7 +217,7 @@ export default function TrackServiceScreen({ route, navigation }) {
                         </TouchableOpacity>
                     )}
 
-                    {/* Cancel — only for pending/assigned */}
+                    {/* Cancel button */}
                     {['pending', 'assigned'].includes(booking.status) && (
                         <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel}>
                             <Text style={styles.cancelBtnText}>Cancel Booking</Text>
@@ -236,14 +233,8 @@ export default function TrackServiceScreen({ route, navigation }) {
 const styles = StyleSheet.create({
     screen: { flex: 1, backgroundColor: '#F1FAEE' },
 
-    // Map
-    mapBox: {
-        height: 180, position: 'relative', overflow: 'hidden',
-    },
-    mapBg: {
-        position: 'absolute', inset: 0,
-        backgroundColor: '#D4EBF0',
-    },
+    mapBox: { height: 180, position: 'relative', overflow: 'hidden' },
+    mapBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#D4EBF0' },
     road: { position: 'absolute', backgroundColor: '#fff' },
     roadH: { height: 2, width: '100%' },
     roadV: { width: 2, height: '100%' },
@@ -265,7 +256,6 @@ const styles = StyleSheet.create({
 
     body: { padding: 16 },
 
-    // Technician card
     techCard: {
         flexDirection: 'row', alignItems: 'center',
         backgroundColor: '#fff', borderRadius: 14,
@@ -290,7 +280,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
 
-    // Steps
     stepsCard: {
         backgroundColor: '#fff', borderRadius: 14,
         padding: 14, marginBottom: 12,
@@ -309,9 +298,7 @@ const styles = StyleSheet.create({
     stepDotDone: { backgroundColor: '#E1F5EE' },
     stepDotActive: { backgroundColor: '#E63946' },
     stepDotPending: { backgroundColor: '#F0F0F0' },
-    activePulse: {
-        width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff',
-    },
+    activePulse: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff' },
     stepLine: { width: 2, height: 24, marginVertical: 3 },
     stepLineDone: { backgroundColor: '#1D9E75' },
     stepLinePending: { backgroundColor: '#EEEEEE' },
@@ -326,7 +313,6 @@ const styles = StyleSheet.create({
     },
     activeBadgeText: { fontSize: 10, color: '#E63946', fontWeight: '700' },
 
-    // Details
     detailCard: {
         backgroundColor: '#fff', borderRadius: 14,
         padding: 14, marginBottom: 12,
@@ -337,14 +323,12 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10,
     },
     detailRow: {
-        flexDirection: 'row', justifyContent: 'space-between',
-        paddingVertical: 9,
+        flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 9,
     },
     detailRowBorder: { borderBottomWidth: 1, borderBottomColor: '#F5F5F5' },
     detailLabel: { fontSize: 12, color: '#6B6B6B', fontWeight: '500', textTransform: 'capitalize' },
     detailValue: { fontSize: 12, color: '#1D1D1D', fontWeight: '700', textTransform: 'capitalize' },
 
-    // Buttons
     payBtn: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
         backgroundColor: '#E63946', borderRadius: 14,

@@ -4,41 +4,31 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 
-// Home Stack
 import HomeScreen from '../screens/home/HomeScreen';
 import ServiceDetailScreen from '../screens/service/ServiceDetailScreen';
 import BookingScreen from '../screens/booking/BookingScreen';
 import PaymentScreen from '../screens/payment/PaymentScreen';
 import ReviewScreen from '../screens/reviews/ReviewScreen';
-
-// Bookings Stack
-import BookingsScreen from '../screens/booking/BookingScreen';
-
-// Messages Stack
+import BookingsScreen from '../screens/bookings/BookingsScreen';
 import MessagesScreen from '../screens/messages/MessagesScreen';
 import ChatScreen from '../screens/messages/ChatScreen';
-
-// Profile Stack
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
-
-// Shared screens
 import TrackServiceScreen from '../screens/tracking/TrackServiceScreen';
 
-const Tab = createBottomTabNavigator();
-const HomeStack = createNativeStackNavigator();
-const BookingsStack = createNativeStackNavigator();
-const MessagesStack = createNativeStackNavigator();
-const ProfileStack = createNativeStackNavigator();
+var Tab = createBottomTabNavigator();
+var HomeStack = createNativeStackNavigator();
+var BookingsStack = createNativeStackNavigator();
+var MessagesStack = createNativeStackNavigator();
+var ProfileStack = createNativeStackNavigator();
 
-const RED_HEADER = {
+var RED_HEADER = {
     headerStyle: { backgroundColor: '#E63946' },
     headerTintColor: '#fff',
     headerTitleStyle: { fontWeight: '700' },
     headerBackTitleVisible: false,
 };
 
-// ── HOME STACK ──────────────────────────────────────────
 function HomeStackNavigator() {
     return (
         <HomeStack.Navigator>
@@ -50,22 +40,22 @@ function HomeStackNavigator() {
             <HomeStack.Screen
                 name="ServiceDetail"
                 component={ServiceDetailScreen}
-                options={{ title: 'Service Details', ...RED_HEADER }}
+                options={Object.assign({ title: 'Service Details' }, RED_HEADER)}
             />
             <HomeStack.Screen
                 name="Booking"
                 component={BookingScreen}
-                options={{ title: 'Book Service', ...RED_HEADER }}
+                options={Object.assign({ title: 'Book Service' }, RED_HEADER)}
             />
             <HomeStack.Screen
                 name="Payment"
                 component={PaymentScreen}
-                options={{ title: 'Payment', ...RED_HEADER }}
+                options={Object.assign({ title: 'Payment' }, RED_HEADER)}
             />
             <HomeStack.Screen
                 name="Review"
                 component={ReviewScreen}
-                options={{ title: 'Leave a Review', ...RED_HEADER }}
+                options={Object.assign({ title: 'Leave a Review' }, RED_HEADER)}
             />
             <HomeStack.Screen
                 name="Chat"
@@ -75,13 +65,12 @@ function HomeStackNavigator() {
             <HomeStack.Screen
                 name="TrackService"
                 component={TrackServiceScreen}
-                options={{ title: 'Track Service', ...RED_HEADER }}
+                options={Object.assign({ title: 'Track Service' }, RED_HEADER)}
             />
         </HomeStack.Navigator>
     );
 }
 
-// ── BOOKINGS STACK ──────────────────────────────────────
 function BookingsStackNavigator() {
     return (
         <BookingsStack.Navigator>
@@ -93,17 +82,17 @@ function BookingsStackNavigator() {
             <BookingsStack.Screen
                 name="TrackService"
                 component={TrackServiceScreen}
-                options={{ title: 'Track Service', ...RED_HEADER }}
+                options={Object.assign({ title: 'Track Service' }, RED_HEADER)}
             />
             <BookingsStack.Screen
                 name="Payment"
                 component={PaymentScreen}
-                options={{ title: 'Payment', ...RED_HEADER }}
+                options={Object.assign({ title: 'Payment' }, RED_HEADER)}
             />
             <BookingsStack.Screen
                 name="Review"
                 component={ReviewScreen}
-                options={{ title: 'Leave a Review', ...RED_HEADER }}
+                options={Object.assign({ title: 'Leave a Review' }, RED_HEADER)}
             />
             <BookingsStack.Screen
                 name="Chat"
@@ -114,7 +103,6 @@ function BookingsStackNavigator() {
     );
 }
 
-// ── MESSAGES STACK ──────────────────────────────────────
 function MessagesStackNavigator() {
     return (
         <MessagesStack.Navigator>
@@ -131,13 +119,12 @@ function MessagesStackNavigator() {
             <MessagesStack.Screen
                 name="TrackService"
                 component={TrackServiceScreen}
-                options={{ title: 'Track Service', ...RED_HEADER }}
+                options={Object.assign({ title: 'Track Service' }, RED_HEADER)}
             />
         </MessagesStack.Navigator>
     );
 }
 
-// ── PROFILE STACK ───────────────────────────────────────
 function ProfileStackNavigator() {
     return (
         <ProfileStack.Navigator>
@@ -149,48 +136,82 @@ function ProfileStackNavigator() {
             <ProfileStack.Screen
                 name="EditProfile"
                 component={EditProfileScreen}
-                options={{ title: 'Edit Profile', ...RED_HEADER }}
+                options={Object.assign({ title: 'Edit Profile' }, RED_HEADER)}
             />
-            {/* MyBookings navigates to the Bookings tab instead */}
         </ProfileStack.Navigator>
     );
 }
 
-// ── BOTTOM TABS ─────────────────────────────────────────
 export default function TabNavigator() {
     return (
         <Tab.Navigator
-            screenOptions={({ route }) => ({
-                headerShown: false,
-                tabBarActiveTintColor: '#E63946',
-                tabBarInactiveTintColor: '#A8A8A8',
-                tabBarStyle: {
-                    backgroundColor: '#fff',
-                    borderTopWidth: 1,
-                    borderTopColor: '#EEEEEE',
-                    height: 60,
-                    paddingBottom: 8,
-                    paddingTop: 6,
-                },
-                tabBarLabelStyle: {
-                    fontSize: 10,
-                    fontWeight: '600',
-                },
-                tabBarIcon: ({ color, focused }) => {
-                    const icons = {
-                        HomeTab: focused ? 'home' : 'home-outline',
-                        Bookings: focused ? 'calendar' : 'calendar-outline',
-                        Messages: focused ? 'chatbubble' : 'chatbubble-outline',
-                        Profile: focused ? 'person' : 'person-outline',
-                    };
-                    return <Ionicons name={icons[route.name]} size={22} color={color} />;
-                },
-            })}
+            screenOptions={function (props) {
+                var route = props.route;
+                var icons = {
+                    HomeTab: 'home',
+                    HomeTabOutline: 'home-outline',
+                    Bookings: 'calendar',
+                    BookingsOutline: 'calendar-outline',
+                    Messages: 'chatbubble',
+                    MessagesOutline: 'chatbubble-outline',
+                    Profile: 'person',
+                    ProfileOutline: 'person-outline',
+                };
+                return {
+                    headerShown: false,
+                    tabBarActiveTintColor: '#E63946',
+                    tabBarInactiveTintColor: '#A8A8A8',
+                    tabBarStyle: {
+                        backgroundColor: '#fff',
+                        borderTopWidth: 1,
+                        borderTopColor: '#EEEEEE',
+                        height: 60,
+                        paddingBottom: 8,
+                        paddingTop: 6,
+                    },
+                    tabBarLabelStyle: {
+                        fontSize: 10,
+                        fontWeight: '600',
+                    },
+                    tabBarIcon: function (iconProps) {
+                        var color = iconProps.color;
+                        var focused = iconProps.focused;
+                        var name = route.name;
+                        var iconName;
+                        if (name === 'HomeTab') {
+                            iconName = focused ? 'home' : 'home-outline';
+                        } else if (name === 'Bookings') {
+                            iconName = focused ? 'calendar' : 'calendar-outline';
+                        } else if (name === 'Messages') {
+                            iconName = focused ? 'chatbubble' : 'chatbubble-outline';
+                        } else {
+                            iconName = focused ? 'person' : 'person-outline';
+                        }
+                        return React.createElement(Ionicons, { name: iconName, size: 22, color: color });
+                    },
+                };
+            }}
         >
-            <Tab.Screen name="HomeTab" component={HomeStackNavigator} options={{ title: 'Home' }} />
-            <Tab.Screen name="Bookings" component={BookingsStackNavigator} options={{ title: 'Bookings' }} />
-            <Tab.Screen name="Messages" component={MessagesStackNavigator} options={{ title: 'Messages' }} />
-            <Tab.Screen name="Profile" component={ProfileStackNavigator} options={{ title: 'Profile' }} />
+            <Tab.Screen
+                name="HomeTab"
+                component={HomeStackNavigator}
+                options={{ title: 'Home' }}
+            />
+            <Tab.Screen
+                name="Bookings"
+                component={BookingsStackNavigator}
+                options={{ title: 'Bookings' }}
+            />
+            <Tab.Screen
+                name="Messages"
+                component={MessagesStackNavigator}
+                options={{ title: 'Messages' }}
+            />
+            <Tab.Screen
+                name="Profile"
+                component={ProfileStackNavigator}
+                options={{ title: 'Profile' }}
+            />
         </Tab.Navigator>
     );
 }

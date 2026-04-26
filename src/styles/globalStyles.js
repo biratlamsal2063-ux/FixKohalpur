@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { COLORS } from '../constants/colors';
+import { black } from 'react-native-paper/lib/typescript/styles/themes/v2/colors';
 
 export const globalStyles = StyleSheet.create({
     header: {
@@ -56,7 +57,7 @@ export const globalStyles = StyleSheet.create({
         borderRadius: 10,
         paddingHorizontal: 14,
         paddingVertical: 12,
-        fontSize: 15,
+        fontSize: 16,
         backgroundColor: COLORS.white,
         marginVertical: 6,
     },

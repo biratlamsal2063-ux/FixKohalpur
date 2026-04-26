@@ -6,7 +6,6 @@ import {
 import { loginUser } from '../../services/authService';
 import { COLORS } from '../../constants/colors';
 import { globalStyles } from '../../styles/globalStyles';
-import { black } from 'react-native-paper/lib/typescript/styles/themes/v2/colors';
 
 export default function LoginScreen({ navigation }) {
     const [email, setEmail] = useState('');

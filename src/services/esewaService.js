@@ -1,36 +1,59 @@
-import { CONFIG } from '../constants/config';
-import CryptoJS from 'crypto-js'; // Install: expo install crypto-js
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import app from '../firebase/firebaseConfig';
 
-/**
- * Generates the eSewa payment HTML form.
- * In UAT (test), merchantCode = EPAYTEST, secret key = 8gBm/:&EnhH.1/q
- * In production, use your real credentials.
- */
-export const generateEsewaPaymentHTML = ({ amount, txnId, productName }) => {
-    // For live, replace secret and URL
-    const secret = '8gBm/:&EnhH.1/q';  // UAT secret
-    const message = `total_amount=${amount},transaction_uuid=${txnId},product_code=${CONFIG.ESEWA_MERCHANT_CODE}`;
-    const signature = CryptoJS.HmacSHA256(message, secret).toString(CryptoJS.enc.Base64);
+var functions = getFunctions(app);
 
-    return `
-    <!DOCTYPE html>
-    <html>
-    <body onload="document.forms[0].submit()">
-      <form action="${CONFIG.ESEWA_PAYMENT_URL}" method="POST">
-        <input type="hidden" name="amount" value="${amount}" />
-        <input type="hidden" name="tax_amount" value="0" />
-        <input type="hidden" name="total_amount" value="${amount}" />
-        <input type="hidden" name="transaction_uuid" value="${txnId}" />
-        <input type="hidden" name="product_code" value="${CONFIG.ESEWA_MERCHANT_CODE}" />
-        <input type="hidden" name="product_service_charge" value="0" />
-        <input type="hidden" name="product_delivery_charge" value="0" />
-        <input type="hidden" name="success_url" value="${CONFIG.ESEWA_SUCCESS_URL}" />
-        <input type="hidden" name="failure_url" value="${CONFIG.ESEWA_FAILURE_URL}" />
-        <input type="hidden" name="signed_field_names" value="total_amount,transaction_uuid,product_code" />
-        <input type="hidden" name="signature" value="${signature}" />
-      </form>
-      <p>Redirecting to eSewa...</p>
-    </body>
-    </html>
-  `;
-};
+// UAT test payment URL — replace with live URL for production
+var ESEWA_PAYMENT_URL = 'https://uat.esewa.com.np/epay/main';
+// Live: 'https://esewa.com.np/epay/main'
+
+// Calls Cloud Function to get a signed payment form
+export async function generateEsewaPaymentHTML(amount, txnId) {
+  try {
+    var generateSignature = httpsCallable(functions, 'generateEsewaSignature');
+    var result = await generateSignature({ amount: amount, txnId: txnId });
+    var data = result.data;
+
+    // Build the payment HTML form
+    var html = '<!DOCTYPE html>' +
+      '<html><body onload="document.forms[0].submit()">' +
+      '<form action="' + ESEWA_PAYMENT_URL + '" method="POST">' +
+      '<input type="hidden" name="amount" value="' + data.amount + '" />' +
+      '<input type="hidden" name="tax_amount" value="0" />' +
+      '<input type="hidden" name="total_amount" value="' + data.amount + '" />' +
+      '<input type="hidden" name="transaction_uuid" value="' + data.txnId + '" />' +
+      '<input type="hidden" name="product_code" value="' + data.merchantCode + '" />' +
+      '<input type="hidden" name="product_service_charge" value="0" />' +
+      '<input type="hidden" name="product_delivery_charge" value="0" />' +
+      '<input type="hidden" name="success_url" value="https://fixkohalpur.com/payment/success" />' +
+      '<input type="hidden" name="failure_url" value="https://fixkohalpur.com/payment/failure" />' +
+      '<input type="hidden" name="signed_field_names" value="total_amount,transaction_uuid,product_code" />' +
+      '<input type="hidden" name="signature" value="' + data.signature + '" />' +
+      '</form>' +
+      '<p style="font-family:sans-serif;text-align:center;margin-top:40px;color:#666">Redirecting to eSewa...</p>' +
+      '</body></html>';
+
+    return { success: true, html: html };
+
+  } catch (error) {
+    console.error('generateEsewaPaymentHTML error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Verifies payment after eSewa redirects back
+export async function verifyEsewaPayment(bookingId, txnId, amount, encodedResponse) {
+  try {
+    var verify = httpsCallable(functions, 'verifyEsewaPayment');
+    var result = await verify({
+      bookingId: bookingId,
+      txnId: txnId,
+      amount: amount,
+      encodedResponse: encodedResponse,
+    });
+    return result.data;
+  } catch (error) {
+    console.error('verifyEsewaPayment error:', error);
+    return { success: false, error: error.message };
+  }
+}

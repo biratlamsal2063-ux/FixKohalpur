@@ -1,76 +1,156 @@
-import React, { useState } from 'react';
-import { View, Text, Alert, ActivityIndicator, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+    View, Text, ActivityIndicator,
+    StyleSheet, Alert, TouchableOpacity,
+} from 'react-native';
 import { WebView } from 'react-native-webview';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { generateEsewaPaymentHTML } from '../../services/esewaService';
-import { updateBookingStatus } from '../../services/bookingService';
-import { CONFIG } from '../../constants/config';
-import { COLORS } from '../../constants/colors';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '../../firebase/firebaseConfig';
 
-export default function PaymentScreen({ route, navigation }) {
-    const { bookingId, provider, amount } = route.params;
-    const [loading, setLoading] = useState(true);
+export default function PaymentScreen(props) {
+    var route = props.route;
+    var navigation = props.navigation;
+    var insets = useSafeAreaInsets();
 
-    const txnId = `FK-${bookingId}-${Date.now()}`;
-    const paymentHTML = generateEsewaPaymentHTML({
-        amount,
-        txnId,
-        productName: `${provider.serviceType} service`,
-    });
+    var booking = route && route.params ? route.params : {};
+    var bookingId = booking.bookingId;
+    var provider = booking.provider || {};
+    var amount = booking.amount || 0;
 
-    const handleNavigationChange = async (navState) => {
-        const { url } = navState;
+    var htmlState = useState(null);
+    var html = htmlState[0];
+    var setHtml = htmlState[1];
 
-        if (url.startsWith(CONFIG.ESEWA_SUCCESS_URL)) {
-            // Payment successful
-            try {
-                await updateDoc(doc(db, 'bookings', bookingId), {
-                    paymentStatus: 'paid',
-                    txnId,
-                    paidAt: new Date().toISOString(),
-                });
-                Alert.alert('Payment Successful! 🎉', 'Your booking is confirmed and paid.', [
-                    { text: 'Leave a Review', onPress: () => navigation.replace('Review', { bookingId, provider }) },
-                    { text: 'Go Home', onPress: () => navigation.navigate('Home') },
-                ]);
-            } catch (e) {
-                Alert.alert('Payment recorded but update failed. Contact support.');
-                navigation.navigate('Home');
+    var loadState = useState(true);
+    var loading = loadState[0];
+    var setLoading = loadState[1];
+
+    var errorState = useState(null);
+    var error = errorState[0];
+    var setError = errorState[1];
+
+    var txnId = 'FK-' + bookingId + '-' + Date.now();
+
+    // Success and failure URLs must match what you put in eSewa dashboard
+    var SUCCESS_URL = 'https://fixkohalpur.com/payment/success';
+    var FAILURE_URL = 'https://fixkohalpur.com/payment/failure';
+
+    useEffect(function () {
+        loadPaymentForm();
+    }, []);
+
+    async function loadPaymentForm() {
+        setLoading(true);
+        setError(null);
+        var result = await generateEsewaPaymentHTML(amount, txnId);
+        if (result.success) {
+            setHtml(result.html);
+        } else {
+            setError(result.error || 'Could not load payment form.');
+        }
+        setLoading(false);
+    }
+
+    function handleNavigationChange(navState) {
+        var url = navState.url;
+
+        if (url && url.startsWith(SUCCESS_URL)) {
+            // Payment redirected to success URL
+            // Extract encoded response from URL if present
+            var encodedResponse = '';
+            if (url.includes('data=')) {
+                encodedResponse = url.split('data=')[1];
             }
+
+            Alert.alert(
+                'Payment Successful!',
+                'Your booking is confirmed and paid.',
+                [
+                    {
+                        text: 'Leave a Review',
+                        onPress: function () {
+                            navigation.replace('Review', {
+                                bookingId: bookingId,
+                                provider: provider,
+                            });
+                        },
+                    },
+                    {
+                        text: 'Go Home',
+                        onPress: function () { navigation.navigate('HomeTab'); },
+                    },
+                ]
+            );
         }
 
-        if (url.startsWith(CONFIG.ESEWA_FAILURE_URL)) {
-            Alert.alert('Payment Failed', 'Your payment could not be processed. Please try again.', [
-                { text: 'Retry', onPress: () => navigation.goBack() },
-                { text: 'Pay Later', onPress: () => navigation.navigate('Home') },
-            ]);
+        if (url && url.startsWith(FAILURE_URL)) {
+            Alert.alert(
+                'Payment Failed',
+                'Your payment could not be processed.',
+                [
+                    { text: 'Try Again', onPress: loadPaymentForm },
+                    { text: 'Pay Later', onPress: function () { navigation.navigate('HomeTab'); } },
+                ]
+            );
         }
-    };
+    }
+
+    // Loading state
+    if (loading) {
+        return (
+            <View style={styles.center}>
+                <ActivityIndicator size="large" color="#E63946" />
+                <Text style={styles.loadingText}>Preparing payment...</Text>
+            </View>
+        );
+    }
+
+    // Error state
+    if (error) {
+        return (
+            <View style={styles.center}>
+                <Text style={styles.errorIcon}>⚠️</Text>
+                <Text style={styles.errorTitle}>Payment Unavailable</Text>
+                <Text style={styles.errorSub}>{error}</Text>
+                <TouchableOpacity style={styles.retryBtn} onPress={loadPaymentForm}>
+                    <Text style={styles.retryBtnText}>Try Again</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={function () { navigation.goBack(); }}>
+                    <Text style={styles.goBack}>Go Back</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
 
     return (
-        <View style={{ flex: 1 }}>
-            {loading && (
-                <View style={styles.loadingOverlay}>
-                    <ActivityIndicator size="large" color={COLORS.primary} />
-                    <Text style={{ marginTop: 12, color: COLORS.textSecondary }}>Opening eSewa...</Text>
-                </View>
-            )}
+        <View style={[styles.screen, { paddingBottom: insets.bottom }]}>
             <WebView
                 originWhitelist={['*']}
-                source={{ html: paymentHTML }}
+                source={{ html: html }}
                 onNavigationStateChange={handleNavigationChange}
-                onLoadEnd={() => setLoading(false)}
-                javaScriptEnabled
+                javaScriptEnabled={true}
+                startInLoadingState={true}
+                renderLoading={function () {
+                    return (
+                        <View style={styles.center}>
+                            <ActivityIndicator size="large" color="#E63946" />
+                            <Text style={styles.loadingText}>Opening eSewa...</Text>
+                        </View>
+                    );
+                }}
             />
         </View>
     );
 }
 
-const styles = StyleSheet.create({
-    loadingOverlay: {
-        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-        justifyContent: 'center', alignItems: 'center',
-        backgroundColor: COLORS.background, zIndex: 10,
-    },
+var styles = StyleSheet.create({
+    screen: { flex: 1, backgroundColor: '#F1FAEE' },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F1FAEE', padding: 24 },
+    loadingText: { color: '#6B6B6B', marginTop: 12, fontSize: 14 },
+    errorIcon: { fontSize: 44, marginBottom: 12 },
+    errorTitle: { fontSize: 17, fontWeight: '700', color: '#1D1D1D', marginBottom: 8 },
+    errorSub: { fontSize: 13, color: '#A8A8A8', textAlign: 'center', marginBottom: 24, lineHeight: 20 },
+    retryBtn: { backgroundColor: '#E63946', borderRadius: 12, paddingHorizontal: 24, paddingVertical: 12, marginBottom: 12 },
+    retryBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+    goBack: { color: '#A8A8A8', fontSize: 13 },
 });

@@ -41,18 +41,17 @@ export default function ServiceDetailScreen(props) {
     var isElec = provider.serviceType === 'electrician';
 
     function handleCall() {
-        if (!provider.phone) {
-            Alert.alert('Not Available', 'Phone number not on record.');
-            return;
-        }
-        var url = 'tel:' + provider.phone;
-        Linking.canOpenURL(url).then(function (supported) {
-            if (supported) {
-                Linking.openURL(url);
-            } else {
-                Alert.alert('Error', 'Unable to make a call on this device.');
-            }
-        });
+        Alert.alert(
+            'Book First',
+            'Phone number is revealed after you book this provider. This protects both you and the provider.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Book Now',
+                    onPress: function () { navigation.navigate('Booking', { provider: provider }); },
+                },
+            ]
+        );
     }
 
     function handleBook() {

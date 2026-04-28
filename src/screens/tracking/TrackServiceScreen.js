@@ -38,13 +38,23 @@ export default function TrackServiceScreen({ route, navigation }) {
         return 'pending';
     };
 
-    const handleCall = () => {
+    function handleCall() {
         if (!booking.providerPhone) {
-            Alert.alert('Not available', 'Provider phone number is not available.');
+            Alert.alert('Not Available', 'Phone number not found for this provider.');
             return;
         }
-        Linking.openURL(`tel:${booking.providerPhone}`);
-    };
+        Alert.alert(
+            booking.providerName || 'Provider',
+            'Phone: ' + booking.providerPhone,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Call Now',
+                    onPress: function () { Linking.openURL('tel:' + booking.providerPhone); },
+                },
+            ]
+        );
+    }
 
     const handleCancel = () => {
         Alert.alert(

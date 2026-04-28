@@ -77,5 +77,7 @@ export const globalStyles = StyleSheet.create({
         paddingVertical: 12,
         gap: 8,
     },
+    actionBtnGreen: { backgroundColor: '#E1F5EE', borderRightWidth: 0.5, borderRightColor: '#F5F5F5' },
+    actionBtnGreenText: { fontSize: 11, fontWeight: '700', color: '#0F6E56' },
 
 });

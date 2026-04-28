@@ -157,10 +157,22 @@ export default function ChatScreen(props) {
                         <Text style={styles.headerSub}>{headerSub}</Text>
                     </View>
                     <View style={styles.headerActions}>
-                        {booking.providerPhone ? (
+                        {booking.providerPhone && role !== 'provider' ? (
                             <TouchableOpacity
                                 style={styles.headerBtn}
-                                onPress={function () { Linking.openURL('tel:' + booking.providerPhone); }}
+                                onPress={function () {
+                                    Alert.alert(
+                                        booking.providerName || 'Provider',
+                                        'Phone: ' + booking.providerPhone,
+                                        [
+                                            { text: 'Cancel', style: 'cancel' },
+                                            {
+                                                text: 'Call Now',
+                                                onPress: function () { Linking.openURL('tel:' + booking.providerPhone); },
+                                            },
+                                        ]
+                                    );
+                                }}
                             >
                                 <Ionicons name="call-outline" size={16} color="#fff" />
                             </TouchableOpacity>

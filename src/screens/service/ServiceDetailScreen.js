@@ -185,8 +185,8 @@ export default function ServiceDetailScreen(props) {
                             onPress={handleCall}
                             activeOpacity={0.8}
                         >
-                            <Ionicons name="call-outline" size={18} color="#fff" />
-                            <Text style={styles.callBtnText}>Call Now</Text>
+                            <Ionicons name="lock-closed-outline" size={18} color="#fff" />
+                            <Text style={styles.callBtnText}>Book to Call</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity

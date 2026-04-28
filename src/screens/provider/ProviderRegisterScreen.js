@@ -29,7 +29,7 @@ export default function ProviderRegisterScreen(props) {
       var result = await createUserWithEmailAndPassword(auth, email.trim(), password);
       var uid = result.user.uid;
       await setDoc(doc(db, 'users', uid), { uid: uid, name: name.trim(), email: email.trim(), phone: phone.trim(), role: 'provider', createdAt: serverTimestamp() });
-      await setDoc(doc(db, 'providers', uid), { uid: uid, name: name.trim(), email: email.trim(), phone: phone.trim(), serviceType: serviceType, ratePerHour: parseInt(rate), experience: parseInt(experience) || 1, bio: bio.trim(), rating: 0, ratingSum: 0, reviewCount: 0, jobsCompleted: 0, isVerified: false, isAvailable: true, createdAt: serverTimestamp() });
+      await setDoc(doc(db, 'providers', uid), { uid: uid, name: name.trim(), email: email.trim(), serviceType: serviceType, ratePerHour: parseInt(rate), experience: parseInt(experience) || 1, bio: bio.trim(), rating: 0, ratingSum: 0, reviewCount: 0, jobsCompleted: 0, isVerified: false, isAvailable: true, createdAt: serverTimestamp() });
       Alert.alert('Welcome!', 'Provider account created successfully.');
     } catch (error) { Alert.alert('Registration Failed', error.message); }
     setLoading(false);
@@ -40,7 +40,7 @@ export default function ProviderRegisterScreen(props) {
       <StatusBar barStyle="light-content" backgroundColor="#E63946" />
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-          <TouchableOpacity onPress={function() { navigation.goBack(); }}><Ionicons name="chevron-back" size={24} color="#fff" /></TouchableOpacity>
+          <TouchableOpacity onPress={function () { navigation.goBack(); }}><Ionicons name="chevron-back" size={24} color="#fff" /></TouchableOpacity>
           <Text style={styles.headerTitle}>Join as Provider</Text>
           <View style={{ width: 24 }} />
         </View>
@@ -52,10 +52,10 @@ export default function ProviderRegisterScreen(props) {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Service Type</Text>
             <View style={{ flexDirection: 'row', gap: 10, padding: 12 }}>
-              {[{ key: 'electrician', label: 'Electrician' }, { key: 'plumber', label: 'Plumber' }].map(function(t) {
+              {[{ key: 'electrician', label: 'Electrician' }, { key: 'plumber', label: 'Plumber' }].map(function (t) {
                 var active = serviceType === t.key;
                 return (
-                  <TouchableOpacity key={t.key} style={[styles.typeChip, active && styles.typeChipActive]} onPress={function() { setServiceType(t.key); }}>
+                  <TouchableOpacity key={t.key} style={[styles.typeChip, active && styles.typeChipActive]} onPress={function () { setServiceType(t.key); }}>
                     <Text style={[styles.typeChipText, active && { color: '#fff' }]}>{t.label}</Text>
                   </TouchableOpacity>
                 );
@@ -69,7 +69,7 @@ export default function ProviderRegisterScreen(props) {
               { label: 'Email *', value: email, setter: setEmail, placeholder: 'your@email.com', type: 'email-address' },
               { label: 'Phone *', value: phone, setter: setPhone, placeholder: '98XXXXXXXX', type: 'phone-pad' },
               { label: 'Password *', value: password, setter: setPassword, placeholder: 'Min 6 characters', secure: true },
-            ].map(function(f, i, arr) {
+            ].map(function (f, i, arr) {
               return (
                 <View key={i} style={[styles.field, i < arr.length - 1 && styles.fieldBorder]}>
                   <Text style={styles.fieldLabel}>{f.label}</Text>
@@ -84,7 +84,7 @@ export default function ProviderRegisterScreen(props) {
               { label: 'Rate per Hour (Rs.) *', value: rate, setter: setRate, placeholder: 'e.g. 500', type: 'numeric' },
               { label: 'Experience (years)', value: experience, setter: setExperience, placeholder: 'e.g. 5', type: 'numeric' },
               { label: 'Bio', value: bio, setter: setBio, placeholder: 'Tell customers about yourself...', multi: true },
-            ].map(function(f, i, arr) {
+            ].map(function (f, i, arr) {
               return (
                 <View key={i} style={[styles.field, i < arr.length - 1 && styles.fieldBorder]}>
                   <Text style={styles.fieldLabel}>{f.label}</Text>
@@ -96,7 +96,7 @@ export default function ProviderRegisterScreen(props) {
           <TouchableOpacity style={[styles.btn, loading && { opacity: 0.7 }]} onPress={handleRegister} disabled={loading}>
             <Text style={styles.btnText}>{loading ? 'Creating Account...' : 'Create Provider Account'}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={{ alignItems: 'center', padding: 12 }} onPress={function() { navigation.navigate('Login'); }}>
+          <TouchableOpacity style={{ alignItems: 'center', padding: 12 }} onPress={function () { navigation.navigate('Login'); }}>
             <Text style={{ color: '#6B6B6B', fontSize: 13 }}>Already have an account? Login</Text>
           </TouchableOpacity>
         </View>

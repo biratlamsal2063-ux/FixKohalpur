@@ -4,14 +4,15 @@ import {
     serverTimestamp,
     doc,
     updateDoc,
+    getDoc,
 } from 'firebase/firestore';
 import { db } from '../firebase/firebaseConfig';
 
+// In bookingService.js, update createBooking:
 export async function createBooking(params) {
     var userId = params.userId;
     var providerId = params.providerId;
     var providerName = params.providerName;
-    var providerPhone = params.providerPhone || '';
     var serviceType = params.serviceType;
     var date = params.date;
     var timeSlot = params.timeSlot;
@@ -19,11 +20,18 @@ export async function createBooking(params) {
     var ratePerHour = params.ratePerHour;
 
     try {
+        // Fetch provider phone from private users collection
+        var providerUserSnap = await getDoc(doc(db, 'users', providerId));
+        var providerPhone = '';
+        if (providerUserSnap.exists()) {
+            providerPhone = providerUserSnap.data().phone || '';
+        }
+
         var ref = await addDoc(collection(db, 'bookings'), {
             userId: userId,
             providerId: providerId,
             providerName: providerName,
-            providerPhone: providerPhone,
+            providerPhone: providerPhone,  // stored in booking — only visible to participants
             serviceType: serviceType,
             date: date,
             timeSlot: timeSlot,
@@ -34,6 +42,7 @@ export async function createBooking(params) {
             lastMessage: '',
             createdAt: serverTimestamp(),
         });
+
         return { success: true, bookingId: ref.id };
     } catch (error) {
         console.error('createBooking error:', error);

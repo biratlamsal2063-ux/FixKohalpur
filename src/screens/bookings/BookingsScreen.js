@@ -92,49 +92,80 @@ export default function BookingsScreen({ navigation }) {
 
         return (
             <View style={styles.actions}>
-                {isPending && (
-                    <>
+                {isPending ? (
+                    <View style={styles.actions}>
                         <TouchableOpacity
-                            style={styles.actionBtn}
-                            onPress={() => handleCancel(item.id)}
+                            style={[styles.actionBtn, styles.actionBtnGray]}
+                            onPress={function () { handleCancel(item.id); }}
                         >
-                            <Text style={styles.actionGray}>Cancel</Text>
+                            <Text style={styles.actionBtnGrayText}>Cancel</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={[styles.actionBtn, styles.actionBorderLeft]}
-                            onPress={() => navigation.navigate('TrackService', { booking: item })}
+                            style={[styles.actionBtn, styles.actionBtnBlue]}
+                            onPress={function () {
+                                navigation.navigate('TrackService', { booking: item });
+                            }}
                         >
-                            <Ionicons name="navigate-outline" size={13} color="#185FA5" />
-                            <Text style={styles.actionBlue}>Track</Text>
+                            <Ionicons name="navigate-outline" size={12} color="#185FA5" />
+                            <Text style={styles.actionBtnBlueText}>Track</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={[styles.actionBtn, styles.actionBorderLeft]}
-                            onPress={() => navigation.navigate('Chat', { booking: item })}
+                            style={[styles.actionBtn, styles.actionBtnRed]}
+                            onPress={function () {
+                                navigation.navigate('Chat', { booking: item });
+                            }}
                         >
-                            <Ionicons name="chatbubble-outline" size={13} color="#E63946" />
-                            <Text style={styles.actionRed}>Message</Text>
+                            <Ionicons name="chatbubble-outline" size={12} color="#E63946" />
+                            <Text style={styles.actionBtnRedText}>Message</Text>
                         </TouchableOpacity>
-                    </>
-                )}
+                    </View>
+                ) : null}
 
-                {isActive && (
-                    <>
+                {isActive ? (
+                    <View style={styles.actions}>
                         <TouchableOpacity
-                            style={styles.actionBtn}
-                            onPress={() => navigation.navigate('TrackService', { booking: item })}
+                            style={[styles.actionBtn, styles.actionBtnBlue]}
+                            onPress={function () {
+                                navigation.navigate('TrackService', { booking: item });
+                            }}
                         >
-                            <Ionicons name="navigate-outline" size={13} color="#185FA5" />
-                            <Text style={styles.actionBlue}>Track</Text>
+                            <Ionicons name="navigate-outline" size={12} color="#185FA5" />
+                            <Text style={styles.actionBtnBlueText}>Track</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={[styles.actionBtn, styles.actionBorderLeft]}
-                            onPress={() => navigation.navigate('Chat', { booking: item })}
+                            style={[styles.actionBtn, styles.actionBtnRed]}
+                            onPress={function () {
+                                navigation.navigate('Chat', { booking: item });
+                            }}
                         >
-                            <Ionicons name="chatbubble-outline" size={13} color="#E63946" />
-                            <Text style={styles.actionRed}>Message</Text>
+                            <Ionicons name="chatbubble-outline" size={12} color="#E63946" />
+                            <Text style={styles.actionBtnRedText}>Message</Text>
                         </TouchableOpacity>
-                    </>
-                )}
+                        {item.providerPhone ? (
+                            <TouchableOpacity
+                                style={[styles.actionBtn, styles.actionBtnGreen]}
+                                onPress={function () {
+                                    Alert.alert(
+                                        item.providerName,
+                                        'Phone: ' + item.providerPhone,
+                                        [
+                                            { text: 'Cancel', style: 'cancel' },
+                                            {
+                                                text: 'Call Now',
+                                                onPress: function () {
+                                                    require('react-native').Linking.openURL('tel:' + item.providerPhone);
+                                                },
+                                            },
+                                        ]
+                                    );
+                                }}
+                            >
+                                <Ionicons name="call-outline" size={12} color="#0F6E56" />
+                                <Text style={styles.actionBtnGreenText}>Call</Text>
+                            </TouchableOpacity>
+                        ) : null}
+                    </View>
+                ) : null}
 
                 {isDone && item.paymentStatus === 'unpaid' && (
                     <>

@@ -8,6 +8,11 @@ export default {
         version: '1.0.0',
         orientation: 'portrait',
         icon: './assets/icon.png',
+        splash: {
+            image: './assets/splash.png',
+            resizeMode: 'contain',
+            backgroundColor: '#ffffff',
+        },
 
         plugins: [
             [
@@ -34,7 +39,7 @@ export default {
 
         android: {
             adaptiveIcon: {
-                foregroundImage: './assets/icon.png',
+                foregroundImage: './assets/adaptive-icon.png',
                 backgroundColor: '#ffffff',
             },
             package: 'com.fixkohalpur.app',
@@ -50,7 +55,7 @@ export default {
 
         ios: {
             bundleIdentifier: 'com.fixkohalpur.app',
-            supportsTablet: true,
+            supportsTablet: false,
         },
 
         extra: {

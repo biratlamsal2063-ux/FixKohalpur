@@ -5,6 +5,7 @@ export default {
         name: 'Fix Kohalpur',
         slug: 'FixKohalpur',
         owner: 'birat_lamsal1',
+        jsEngine: 'hermes',
         version: '1.0.0',
         orientation: 'portrait',
         icon: './assets/icon.png',

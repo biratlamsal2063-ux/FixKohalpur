@@ -12,9 +12,9 @@ var extra = Constants.expoConfig && Constants.expoConfig.extra
 var firebaseConfig = {
     apiKey: extra.firebaseApiKey || 'AIzaSyBkWwvm6I_esiQP_ob4fK-B2Hw4jcm3Xwk',
     authDomain: extra.firebaseAuthDomain || 'fixkohalpur.firebaseapp.com',
-    projectId: extra.firebaseProjectId | fixkohalpur | '',
-    storageBucket: extra.firebaseStorageBucket | fixkohalpur.firebasestorage.app | '',
-    messagingSenderId: extra.firebaseMessagingSenderId | 647979211426 | '',
+    projectId: extra.firebaseProjectId || 'fixkohalpur',
+    storageBucket: extra.firebaseStorageBucket || 'fixkohalpur.firebasestorage.app',
+    messagingSenderId: extra.firebaseMessagingSenderId || '647979211426',
     appId: extra.firebaseAppId || '1:647979211426:web:a2914e11ec5320ec23d5fb',
 };
 

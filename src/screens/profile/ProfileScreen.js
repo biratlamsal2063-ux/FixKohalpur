@@ -272,6 +272,33 @@ export default function ProfileScreen({ navigation }) {
                     />
                 </SectionCard>
 
+
+                <SectionCard title="About">
+                    <RowItem
+                        icon="information-circle-outline"
+                        iconBg="#EBF4F9"
+                        iconColor="#457B9D"
+                        title="About Fix Kohalpur"
+                        subtitle="Version 1.0.0"
+                        onPress={function () {
+                            Alert.alert(
+                                'Fix Kohalpur',
+                                'Version 1.0.0\n\nFix Kohalpur connects you with trusted electricians and plumbers in Kohalpur, Banke.\n\nMade with ❤️ in Kohalpur, Nepal.',
+                                [{ text: 'OK' }]
+                            );
+                        }}
+                    />
+                    <RowItem
+                        icon="globe-outline"
+                        iconBg="#E1F5EE"
+                        iconColor="#0F6E56"
+                        title="Visit Website"
+                        subtitle="fixkohalpur.com"
+                        onPress={function () { Linking.openURL('https://fixkohalpur.com'); }}
+                        isLast
+                    />
+                </SectionCard>
+
                 {/* ── LOGOUT ── */}
                 <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.75}>
                     <Ionicons name="log-out-outline" size={18} color="#E63946" />

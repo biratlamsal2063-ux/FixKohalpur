@@ -95,6 +95,11 @@ export default function HomeScreen({ navigation }) {
         setLoading(false);
         setRefreshing(false);
         runAnims();
+        //shows in breif if refreshed manually 
+
+        if (refreshing) {
+            //already handeled by the state
+        }
     };
 
     useEffect(() => { if (user) loadProviders(); }, [user]);
@@ -316,21 +321,29 @@ export default function HomeScreen({ navigation }) {
                         />
                     </Animated.View>
                 )}
-                ListEmptyComponent={() => (
-                    <View style={styles.emptyBox}>
-                        <Text style={styles.emptyIcon}>🔍</Text>
-                        <Text style={styles.emptyTitle}>No providers found</Text>
-                        <Text style={styles.emptySub}>Try adjusting your filters or search term</Text>
-                        {activeFilterCount > 0 && (
-                            <TouchableOpacity
-                                style={styles.clearFiltersBtn}
-                                onPress={() => setFilters(DEFAULT_FILTERS)}
-                            >
-                                <Text style={styles.clearFiltersBtnText}>Clear All Filters</Text>
-                            </TouchableOpacity>
-                        )}
-                    </View>
-                )}
+                ListEmptyComponent={function () {
+                    return (
+                        <View style={styles.emptyBox}>
+                            <Text style={styles.emptyIcon}>🔍</Text>
+                            <Text style={styles.emptyTitle}>No providers found</Text>
+                            <Text style={styles.emptySub}>
+                                {search.trim()
+                                    ? 'No results for "' + search + '". Try a different search.'
+                                    : activeFilterCount > 0
+                                        ? 'No providers match your filters. Try clearing them.'
+                                        : 'No providers available right now. Check back soon.'}
+                            </Text>
+                            {activeFilterCount > 0 && (
+                                <TouchableOpacity
+                                    style={styles.clearFiltersBtn}
+                                    onPress={function () { setFilters(DEFAULT_FILTERS); }}
+                                >
+                                    <Text style={styles.clearFiltersBtnText}>Clear All Filters</Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    );
+                }}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
